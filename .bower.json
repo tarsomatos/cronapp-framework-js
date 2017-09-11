@@ -1,7 +1,7 @@
 {
   "name": "cronapp-framework-js",
   "version": "0.0.5",
-  "homepage": "https://github.com/technecloud/cronapp-framework-js",
+  "homepage": "https://github.com/tarsomatos/cronapp-framework-js",
   "authors": [
     "Arthemus Cicotti Moreira <arthemus.moreira@gmail.com>"
   ],
@@ -49,7 +49,7 @@
     "tag": "0.0.5",
     "commit": "9e6e69af10bf16a7b850d7e0da3661bb6ec4bb86"
   },
-  "_source": "https://github.com/technecloud/cronapp-framework-js.git",
+  "_source": "https://github.com/tarsomatos/cronapp-framework-js.git",
   "_target": "*",
   "_originalSource": "cronapp-framework-js"
 }
