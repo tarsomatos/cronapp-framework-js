@@ -1,1 +1,219 @@
-!function(e){angular.module("custom.controllers",[]),app.controller("LoginController",["$scope","$http","$location","$rootScope","$window","$state","$translate","Notification",function(e,o,n,s,t,a,r,i){function c(e,o,n,t){"undefined"!=typeof Storage&&(sessionStorage.setItem("_u",JSON.stringify(e)),s.session=JSON.parse(sessionStorage._u)),a.go("home")}function l(e,o,n,s){var t=401==o?r.instant("Login.view.invalidPassword"):e;i.error(t)}app.registerEventsCronapi(e,r),e.message={},e.login=function(){e.message.error=void 0;var n={username:e.username.value,password:e.password.value};o({method:"POST",url:"auth",data:$.param(n),headers:{"Content-Type":"application/x-www-form-urlencoded"}}).success(c).error(l)}}]),app.controller("HomeController",["$scope","$http","$rootScope","$state","$translate","Notification",function(e,o,n,s,t,a){app.registerEventsCronapi(e,t),n.http=o,n.Notification=a,e.message={},e.selecionado={valor:1},e.refreshToken=function(){o({method:"GET",url:"auth/refresh"}).success(function(o,n,s,t){console.log("revive :",new Date(o.expires)),sessionStorage.setItem("_u",JSON.stringify(o)),setTimeout(function(){e.refreshToken()},18e5)}).error(function(){})},n.session=sessionStorage._u?JSON.parse(sessionStorage._u):null,n.session?(n.myTheme=n.session.user.theme,e.$watch("myTheme",function(e){void 0!==e&&""!==e&&$("#themeSytleSheet").attr("href","css/themes/"+e+".min.css")}),n.session.token&&e.refreshToken()):(s.go("login"),sessionStorage.removeItem("_u")),n.logout=function(){n.session={},"undefined"!=typeof Storage&&sessionStorage.removeItem("_u"),s.go("login")},e.changePassword=function(){function e(e,o,n,r){a.info(t.instant("Home.view.passwordChanged")),s()}function n(e,o,n,s){var r=o>=401?t.instant("Home.view.InvalidPassword"):e;a.error(r)}function s(){oldPassword.value="",newPassword.value="",newPasswordConfirmation.value="",$("#modalPassword").modal("hide")}var r={oldPassword:oldPassword.value,newPassword:newPassword.value,newPasswordConfirmation:newPasswordConfirmation.value};o({method:"POST",url:"changePassword",data:$.param(r),headers:{"Content-Type":"application/x-www-form-urlencoded"}}).success(e).error(n)};var r=function(){var e=$(this);e.closest(".sub-menu").length>0&&e.closest(".navbar-nav").collapse("hide")};e.$on("$viewContentLoaded",function(){var e=$(".navbar-nav");e.off("click","a",r),e.on("click","a",r)}),e.themes=["cerulean","cosmo","cyborg","darkly","flatly","journal","lumen","paper","readable","sandstone","simplex","slate","spacelab","superhero","united","yeti"],e.changeTheme=function(e){function s(o,s,t,a){n.session.theme=e,sessionStorage.setItem("_u",JSON.stringify(n.session))}function t(e,o,n,s){var t=e;a.error(t)}if(void 0!==e){$("body").append('<div id="transition" />'),$("#transition").css({"background-color":"#FFF",zIndex:1e5,position:"fixed",top:"0px",right:"0px",bottom:"0px",left:"0px",overflow:"hidden",display:"block"}),$("#transition").fadeIn(800,function(){$("#themeSytleSheet").attr("href","css/themes/"+e+".min.css"),n.myTheme=e,$("#transition").fadeOut(1e3,function(){$("#transition").remove()})});var r={theme:e};o({method:"POST",url:"changeTheme",data:$.param(r),headers:{"Content-Type":"application/x-www-form-urlencoded"}}).success(s).error(t)}}}])}(app),window.safeApply=function(e){var o=this.$root.$$phase;"$apply"==o||"$digest"==o?e&&"function"==typeof e&&e():this.$apply(e)};
+(function($app) {
+  angular.module('custom.controllers', []);
+
+  app.controller('LoginController', ['$scope', '$http', '$location', '$rootScope', '$window', '$state', '$translate', 'Notification', function($scope, $http, $location, $rootScope, $window, $state, $translate, Notification) {
+
+    app.registerEventsCronapi($scope, $translate);
+
+    $scope.message = {};
+    $scope.login = function() {
+      $scope.message.error = undefined;
+
+      var user = {
+        username: $scope.username.value,
+        password: $scope.password.value
+      };
+
+      $http({
+        method: 'POST',
+        url: 'auth',
+        data: $.param(user),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }).success(handleSuccess).error(handleError);
+    }
+
+    function handleSuccess(data, status, headers, config) {
+      // Store data response on session storage
+      // The session storage will be cleaned when the browser window is closed
+      if (typeof(Storage) !== "undefined") {
+        // save the user data on localStorage
+        sessionStorage.setItem("_u", JSON.stringify(data));
+        $rootScope.session = JSON.parse(sessionStorage._u);
+      } else {
+        // Sorry! No Web Storage support.
+        // The home page may not work if it depends
+        // on the logged user data
+      }
+
+      // Redirect to home page
+      $state.go("home");
+    }
+
+    function handleError(data, status, headers, config) {
+      var error = status == 401 ? $translate.instant('Login.view.invalidPassword') : data;
+      Notification.error(error);
+    }
+  }]);
+
+  app.controller('HomeController', ['$scope', '$http', '$rootScope', '$state', '$translate', 'Notification', function($scope, $http, $rootScope, $state, $translate, Notification) {
+
+    app.registerEventsCronapi($scope, $translate);
+
+    $rootScope.http = $http;
+    $rootScope.Notification = Notification;
+
+    $scope.message = {};
+
+    $scope.selecionado = {
+      valor: 1
+    }
+
+    // refresh token
+    $scope.refreshToken = function() {
+      $http({
+        method: 'GET',
+        url: 'auth/refresh'
+      }).success(function(data, status, headers, config) {
+        // Store data response on session storage
+        console.log('revive :', new Date(data.expires));
+        sessionStorage.setItem("_u", JSON.stringify(data));
+        // Recussive
+        setTimeout(function() {
+          $scope.refreshToken();
+          // refres time
+        }, (1800 * 1000));
+      }).error(function() {
+        // abafar TODO
+      });
+    };
+
+    $rootScope.session = (sessionStorage._u) ? JSON.parse(sessionStorage._u) : null;
+
+    if ($rootScope.session) {
+      // When access home page we have to check
+      // if the user is authenticated and the userData
+      // was saved on the browser's sessionStorage
+      $rootScope.myTheme = $rootScope.session.user.theme;
+      $scope.$watch('myTheme', function(value) {
+        if (value !== undefined && value !== "") {
+          $('#themeSytleSheet').attr('href', "css/themes/" + value + ".min.css");
+        }
+      });
+      if ($rootScope.session.token) $scope.refreshToken();
+    } else {
+      $state.go("login");
+      sessionStorage.removeItem("_u");
+    }
+
+    $rootScope.logout = function logout() {
+      $rootScope.session = {};
+      if (typeof(Storage) !== "undefined") {
+        // save the user data on localStorage
+        sessionStorage.removeItem("_u");
+      }
+      $state.go("login");
+    };
+
+    $scope.changePassword = function() {
+
+      var user = {
+        oldPassword: oldPassword.value,
+        newPassword: newPassword.value,
+        newPasswordConfirmation: newPasswordConfirmation.value
+      };
+
+      $http({
+        method: 'POST',
+        url: 'changePassword',
+        data: $.param(user),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }).success(changeSuccess).error(changeError);
+
+      function changeSuccess(data, status, headers, config) {
+        Notification.info($translate.instant('Home.view.passwordChanged'));
+        cleanPasswordFields();
+      }
+
+      function changeError(data, status, headers, config) {
+        var error = status >= 401 ? $translate.instant('Home.view.InvalidPassword') : data;
+        Notification.error(error);
+      }
+
+      function cleanPasswordFields() {
+        oldPassword.value = "";
+        newPassword.value = "";
+        newPasswordConfirmation.value = "";
+        $("#modalPassword").modal("hide");
+      }
+    };
+
+    var closeMenuHandler = function() {
+      var element = $(this);
+      if (element.closest('.sub-menu').length > 0) {
+        element.closest(".navbar-nav").collapse('hide');
+      }
+    };
+
+    $scope.$on('$viewContentLoaded', function() {
+      var navMain = $(".navbar-nav");
+
+      //Here your view content is fully loaded !!
+      navMain.off("click", "a", closeMenuHandler);
+      navMain.on("click", "a", closeMenuHandler);
+    });
+
+    $scope.themes = ["cerulean", "cosmo", "cyborg", "darkly", "flatly", "journal", "lumen", "paper", "readable", "sandstone", "simplex", "slate", "spacelab", "superhero", "united", "yeti"];
+
+    $scope.changeTheme = function(theme) {
+      if (theme !== undefined) {
+        $('body').append('<div id="transition" />');
+        $('#transition').css({
+          'background-color': '#FFF',
+          'zIndex': 100000,
+          'position': 'fixed',
+          'top': '0px',
+          'right': '0px',
+          'bottom': '0px',
+          'left': '0px',
+          'overflow': 'hidden',
+          'display': 'block'
+        });
+        $('#transition').fadeIn(800, function() {
+          $('#themeSytleSheet').attr('href', "css/themes/" + theme + ".min.css");
+          $rootScope.myTheme = theme;
+          $('#transition').fadeOut(1000, function() {
+            $('#transition').remove();
+          });
+        });
+
+        var user = {
+          theme: theme
+        };
+
+        $http({
+          method: 'POST',
+          url: 'changeTheme',
+          data: $.param(user),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }).success(changeSuccess).error(changeError);
+
+        function changeSuccess(data, status, headers, config) {
+          $rootScope.session.theme = theme;
+          sessionStorage.setItem("_u", JSON.stringify($rootScope.session));
+        }
+
+        function changeError(data, status, headers, config) {
+          var error = data;
+          Notification.error(error);
+        }
+      }
+    };
+  }]);
+}(app));
+
+window.safeApply = function(fn) {
+  var phase = this.$root.$$phase;
+  if (phase == '$apply' || phase == '$digest') {
+    if (fn && (typeof(fn) === 'function')) {
+      fn();
+    }
+  } else {
+    this.$apply(fn);
+  }
+};

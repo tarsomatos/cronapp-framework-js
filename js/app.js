@@ -1,23 +1,19 @@
 var app = (function() {
   return angular.module('MyApp', [
+      'ionic',
       'ui.router',
-      'ui.select',
-      'ui-select-infinity',
       'ngResource',
       'ngSanitize',
       'custom.controllers',
       'custom.services',
       'datasourcejs',
-      'chart.js',
-      'ngMask',
-      'ngJustGage',
       'pascalprecht.translate',
       'tmh.dynamicLocale',
       'ui-notification',
-      'ui.bootstrap',
+      'ngInputDate',
+      'ngCordova',
       'ngFileUpload'
     ])
-
     .constant('LOCALES', {
       'locales': {
         'pt_br': 'Portugues (Brasil)',
@@ -35,10 +31,7 @@ var app = (function() {
             var service = {
               'request': function(config) {
                 var _u = JSON.parse(sessionStorage.getItem('_u'));
-                if (_u && _u.token) {
-                  config.headers['X-AUTH-TOKEN'] = _u.token;
-                  window.uToken = _u.token;
-                }
+                if (_u && _u.token) config.headers['X-AUTH-TOKEN'] = _u.token;
                 return config;
               }
             };
@@ -160,21 +153,6 @@ var app = (function() {
       for (var x in app.userEvents)
         $scope[x] = app.userEvents[x].bind($scope);
 
-      try {
-        if (cronapi)
-          $scope['cronapi'] = cronapi;
-      } catch (e) {
-        console.info('Not loaded cronapi functions');
-        console.info(e);
-      }
-      try {
-        if (blockly)
-          $scope['blockly'] = blockly;
-      } catch (e) {
-        console.info('Not loaded blockly functions');
-        console.info(e);
-      }
-
       // save state params into scope
       $scope.params = $stateParams;
       $scope.$http = $http;
@@ -200,6 +178,31 @@ var app = (function() {
           $state.go('404');
         }
       });
+      
+      $rootScope.$on('$stateChangeSuccess', function() {
+        setTimeout(function() { 
+          
+          $($('.icon.ion-plus-round').parent()).off('click');
+          $($('.icon.ion-plus-round').parent()).on('click',function() {
+            $('[required]').removeClass('input-validation-error');
+            $('input:invalid').removeClass('input-validation-error');
+          });
+          
+          $($('.icon.ion-checkmark').parent()).off('click');
+          $($('.icon.ion-checkmark').parent()).on('click',function() {
+            $('[required].ng-invalid-required, [required].ng-invalid, [required].ng-empty').addClass('input-validation-error');
+            $('input:invalid').addClass('input-validation-error');
+          });
+          
+          $('input').off('keydown')
+          $('input').on('keydown', function() {
+            $(this).removeClass('input-validation-error');
+          }); 
+          
+        }, 300);
+          
+      });
+      
     });
 
 }(window));

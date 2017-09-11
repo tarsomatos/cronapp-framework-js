@@ -1,30 +1,49 @@
 var app = (function() {
 
   return angular.module('MyApp', [
+      'ionic',
       'ui.router',
-      'ui.select',
-      'ui-select-infinity',
       'ngResource',
       'ngSanitize',
       'custom.controllers',
       'custom.services',
       'datasourcejs',
-      'chart.js',
-      'ngMask',
-      'ngJustGage',
       'pascalprecht.translate',
       'tmh.dynamicLocale',
       'ui-notification',
-      'ui.bootstrap',
+      'ngInputDate',
+      'ngCordova',
       'ngFileUpload'
     ])
-
     .constant('LOCALES', {
       'locales': {
         'pt_br': 'Portugues (Brasil)',
         'en_us': 'English'
       },
       'preferredLocale': 'pt_br'
+    })
+    .run(function($ionicPlatform) {
+      $ionicPlatform.ready(function() {
+        // Remove splash screen
+        setTimeout(function() {
+          if (navigator.splashscreen) {
+            navigator.splashscreen.hide();
+          }
+        }, 100);
+        // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
+        // for form inputs)
+        if (window.cordova &&
+          window.cordova.plugins.Keyboard) {
+          cordova.plugins.Keyboard
+            .hideKeyboardAccessoryBar(true);
+          cordova.plugins.Keyboard.disableScroll(true);
+
+        }
+        if (window.StatusBar) {
+          // org.apache.cordova.statusbar required
+          StatusBar.styleDefault();
+        }
+      });
     })
     .config([
       '$httpProvider',
@@ -49,6 +68,9 @@ var app = (function() {
         $httpProvider.interceptors.push(interceptor);
       }
     ])
+    .config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
+      $ionicConfigProvider.navBar.alignTitle('center')
+    })
     .config(function($stateProvider, $urlRouterProvider, NotificationProvider) {
       NotificationProvider.setOptions({
         delay: 5000,
@@ -75,17 +97,31 @@ var app = (function() {
           templateUrl: 'views/login.view.html'
         })
 
-        .state('home', {
+        .state('app', {
+          url: "/app",
+          controller: 'HomeController',
+          templateUrl: 'views/logged/menu.view.html'
+        })
+		
+        .state('app.home', {
           url: "/home",
           controller: 'HomeController',
-          templateUrl: 'views/logged/home.view.html'
+          views: {
+            'menuContent': {
+              templateUrl: 'views/logged/home.view.html'
+            }
+          }
         })
 
-        .state('home.pages', {
+        .state('app.pages', {
           url: "/{name:.*}",
           controller: 'PageController',
-          templateUrl: function(urlattr) {
-            return 'views/' + urlattr.name + '.view.html';
+          views: {
+            'menuContent': {
+              templateUrl: function(urlattr) {
+                return 'views/' + urlattr.name + '.view.html';
+              }
+            }
           }
         })
 
@@ -196,6 +232,29 @@ var app = (function() {
           $state.go('404');
         }
       });
+        $rootScope.$on('$stateChangeSuccess', function() {
+          setTimeout(function() { 
+            
+            $($('.icon.ion-plus-round').parent()).off('click');
+            $($('.icon.ion-plus-round').parent()).on('click',function() {
+              $('[required]').removeClass('input-validation-error');
+              $('input:invalid').removeClass('input-validation-error');
+            });
+            
+            $($('.icon.ion-checkmark').parent()).off('click');
+            $($('.icon.ion-checkmark').parent()).on('click',function() {
+              $('[required].ng-invalid-required, [required].ng-invalid, [required].ng-empty').addClass('input-validation-error');
+              $('input:invalid').addClass('input-validation-error');
+            });
+            
+            $('input').off('keydown')
+            $('input').on('keydown', function() {
+              $(this).removeClass('input-validation-error');
+            }); 
+            
+          }, 300);
+            
+        });
     });
 
 }(window));
@@ -205,6 +264,7 @@ app.userEvents = {};
 //Configuration
 app.config = {};
 app.config.datasourceApiVersion = 2;
+app.config.defaultRoute = "/app";
 
 app.registerEventsCronapi = function($scope, $translate) {
   for (var x in app.userEvents)
